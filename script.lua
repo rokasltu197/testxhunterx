@@ -1,33 +1,34 @@
--- LocalScript inside StarterGui > ScreenGui
+-- LocalScript for Executor
 
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create black overlay
 local blackScreen = Instance.new("Frame")
 blackScreen.Size = UDim2.new(1, 0, 1, 0)
 blackScreen.Position = UDim2.new(0, 0, 0, 0)
-blackScreen.BackgroundColor3 = Color3.new(0, 0, 0) -- full black = AMOLED pixel off
+blackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
 blackScreen.BorderSizePixel = 0
 blackScreen.Visible = false
-blackScreen.ZIndex = 999999
-blackScreen.Parent = script.Parent
+blackScreen.ZIndex = 10
+blackScreen.Parent = screenGui
 
+-- Create toggle button
 local button = Instance.new("TextButton")
 button.Size = UDim2.new(0, 100, 0, 40)
-button.Position = UDim2.new(1, -110, 0.5, -20)
+button.Position = UDim2.new(0.95, -110, 0.5, -20) -- Positioned near the right edge
+button.AnchorPoint = Vector2.new(1, 0.5)
 button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 button.TextColor3 = Color3.new(1, 1, 1)
 button.Text = "Black ON"
-button.ZIndex = 1000000
-button.Parent = script.Parent
+button.ZIndex = 11
+button.Parent = screenGui
 
+-- Toggle logic
 local isBlack = false
-button.MouseButton1Click:Connect(function()
+button.Activated:Connect(function()
 	isBlack = not isBlack
 	blackScreen.Visible = isBlack
 	button.Text = isBlack and "Black OFF" or "Black ON"
-
-	-- optional: lower game brightness a bit while black screen is on
-	if isBlack then
-		game.Lighting.Brightness = 0
-	else
-		game.Lighting.Brightness = 2
-	end
 end)
