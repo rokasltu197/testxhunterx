@@ -462,6 +462,7 @@ Tab1:AddToggle({ Name = "Auto pickup Support Farm full set", Default = false, Ca
                     end
                 end
                 task.wait(0.1)
+            end
         end)
     end
 end })
