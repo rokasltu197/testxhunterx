@@ -1,64 +1,315 @@
 -- ============================ YOUR APP CODE ============================
 local Window = OrionLib:MakeWindow({
-    Name = "Dragon Blox Full 2 V1.11",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "TeleportConfig"
+	Name = "Dragon Blox Full 2 V1.11",
+	HidePremium = false,
+	SaveConfig = true,
+	ConfigFolder = "TeleportConfig"
 })
 
-local Tab  = Window:MakeTab({Name = "Smart+Anti Band", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local Tab = Window:MakeTab({Name = "Great Premium", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 local Tab1 = Window:MakeTab({Name = "Auto Farm👑", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 local Tab2 = Window:MakeTab({Name = "Dungeon", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 local Tab3 = Window:MakeTab({Name = "Auto Skill", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 local Tab4 = Window:MakeTab({Name = "Anti lag", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
-local BossFolder = workspace["World Mobs"]["Boss Mobs"]
-
-local AutoMeta = false
-local AutoPainsHurts = false
-local AutoZero = false
-
-local MetaTween = nil
-local PainsHurtsTween = nil
-local ZeroTween = nil
-
-local TweenSpeed = 200
 
 -- =========================================================
--- TAB 2: DUNGEON
+-- NEW FEATURES FROM YOUR NEW SCRIPT
 -- =========================================================
-Tab2:AddButton({
-    Name = "Teleport to Spawn",
-    Callback = function()
-        local Character = Player.Character
-        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-        if Root then
-            Root.CFrame = CFrame.new(0, 50, 0) -- Adjust these coordinates to your spawn
-            OrionLib:MakeNotification({Name = "Teleported", Content = "Teleported to Spawn", Time = 3})
+
+local KillCount = 0
+local KillLabel = Tab:AddLabel("Great Droid Kills: 0")
+
+task.spawn(function()
+    local LastDead = false
+    while task.wait(0.5) do
+        local Boss = workspace:FindFirstChild("World Mobs")
+            and workspace["World Mobs"]:FindFirstChild("Event Mobs")
+            and workspace["World Mobs"]["Event Mobs"]:FindFirstChild("Great Droid")
+
+        if Boss then
+            local Humanoid = Boss:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                if Humanoid.Health <= 0 then
+                    if not LastDead then
+                        LastDead = true
+                        KillCount = KillCount + 1
+                        KillLabel:Set("Great Droid Kills: "..KillCount)
+                    end
+                else
+                    LastDead = false
+                end
+            end
+        end
+    end
+end)
+
+Tab:AddToggle({
+    Name = "Auto Play Again",
+    Default = false,
+    Callback = function(Value)
+        getgenv().AutoPlayAgain = Value
+        task.spawn(function()
+            while getgenv().AutoPlayAgain do
+                task.wait(7.8)
+                local atom = workspace:FindFirstChild("World Mobs")
+                atom = atom and atom:FindFirstChild("Event Mobs")
+                atom = atom and atom:FindFirstChild("Great Droid")
+
+                local dead = false
+                if atom and atom:FindFirstChild("Humanoid") then
+                    if atom.Humanoid.Health <= 0 then dead = true end
+                else
+                    dead = true
+                end
+
+                if dead then
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                        .Packages._Index["sleitnick_knit@1.4.7"]
+                        .knit.Services.DungeonLobbyService.RF.StartDungeon
+                        :InvokeServer()
+                    end)
+                end
+            end
+        end)
+    end
+})
+
+local SelectedTool = 2
+local AutoEquipTools = false
+
+Tab:AddDropdown({
+    Name = "Auto equiptools dls",
+    Default = "2",
+    Options = {"1","2","3","4","5","6"},
+    Callback = function(Value) SelectedTool = tonumber(Value) end
+})
+
+Tab:AddToggle({
+    Name = "Auto EquipTools",
+    Default = false,
+    Callback = function(Value)
+        AutoEquipTools = Value
+        if Value then
+            task.spawn(function()
+                while AutoEquipTools do
+                    local args = { SelectedTool }
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                        :WaitForChild("Packages"):WaitForChild("_Index")
+                        :WaitForChild("sleitnick_knit@1.4.7"):WaitForChild("knit")
+                        :WaitForChild("Services"):WaitForChild("ToolService")
+                        :WaitForChild("RE"):WaitForChild("UpdatePlayerToolbarSelection")
+                        :FireServer(unpack(args))
+                    end)
+                    task.wait(0.1)
+                end
+            end)
         end
     end
 })
 
--- =========================================================
--- TAB 3: AUTO SKILL
--- =========================================================
-local FastAttackEnabled = false
+local AutoGodmode = false
+local HEIGHT_ABOVE = 9.22
 
-Tab3:AddToggle({
-    Name = "Fast Attack (Spam M1)",
+Tab:AddToggle({
+    Name = "Auto Skill + Godmode V2 (Chạy Liên Tục)",
     Default = false,
     Callback = function(Value)
-        FastAttackEnabled = Value
+        AutoGodmode = Value
         if Value then
             task.spawn(function()
-                while FastAttackEnabled do
-                    local VIM = game:GetService("VirtualInputManager")
-                    VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                    VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                while AutoGodmode do
+                    local character = Player.Character
+                    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+                    local bossFolder = workspace:FindFirstChild("World Mobs") and workspace["World Mobs"]:FindFirstChild("Event Mobs")
+                    
+                    if hrp and bossFolder then
+                        local closestBoss, closestDist = nil, math.huge
+                        for _, mob in ipairs(bossFolder:GetChildren()) do
+                            local humanoid = mob:FindFirstChild("Humanoid")
+                            local root = mob:FindFirstChild("HumanoidRootPart")
+                            if root and humanoid and humanoid.Health > 0 then
+                                local dist = (hrp.Position - root.Position).Magnitude
+                                if dist < closestDist then closestDist = dist; closestBoss = mob end
+                            end
+                        end
+                        
+                        if closestBoss and closestBoss:FindFirstChild("HumanoidRootPart") then
+                            local bossHRP = closestBoss.HumanoidRootPart
+                            local targetPos = bossHRP.Position + Vector3.new(0, HEIGHT_ABOVE, 0)
+                            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                            
+                            local tween = TweenService:Create(hrp, TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                CFrame = CFrame.new(targetPos, bossHRP.Position)
+                            })
+                            tween:Play()
+                        end
+                    end
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+local AutoLoc = false
+Tab:AddToggle({
+    Name = "Auto Lộc",
+    Default = false,
+    Callback = function(Value)
+        AutoLoc = Value
+        if Value then
+            task.spawn(function()
+                while AutoLoc do
+                    local GreatDroid = workspace:FindFirstChild("World Mobs") and workspace["World Mobs"]:FindFirstChild("Event Mobs") and workspace["World Mobs"]["Event Mobs"]:FindFirstChild("Great Droid")
+                    if GreatDroid then
+                        pcall(function()
+                            game:GetService("ReplicatedStorage").Packages._Index["sleitnick_knit@1.4.7"].knit.Services.SkillManager.RE.LockedOnChanged:FireServer(GreatDroid)
+                        end)
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+local AutoSkillXanh = false
+Tab:AddToggle({
+    Name = "Auto Skill Xanh",
+    Default = false,
+    Callback = function(Value)
+        AutoSkillXanh = Value
+        if Value then
+            task.spawn(function()
+                while AutoSkillXanh do
+                    local args = {
+                        "Weapons_22_2",
+                        {
+                            targetPos = vector.create(1204.772705078125, 2011.405029296875, 744.3994750976562),
+                            PauseTimeFrame = 0.016666666666666666,
+                            animationInstance = game:GetService("ReplicatedStorage").Assets.SkillsV2.Weapons["SSJG Legend Weapon"].Animations["Double Wild Cannon"],
+                            animationSpeed = 1,
+                            ResumeOnTimePassed = 1,
+                            HumCFrame = CFrame.new(1241.96044921875, 2020.822021484375, 823.090087890625, 0.9039086103439331, -0.06293655186891556, 0.4230699837207794, -7.279183478203777e-09, 0.989115297794342, 0.14714235067367554, -0.4277256429195404, -0.13300324976444244, 0.8940698504447937)
+                        },
+                        12,
+                        true
+                    }
+                    pcall(function()
+                        game:GetService("ReplicatedStorage").Packages._Index["sleitnick_knit@1.4.7"].knit.Services.SkillManagerV2.RE.ExecuteSkill:FireServer(unpack(args))
+                        args[4] = false
+                        game:GetService("ReplicatedStorage").Packages._Index["sleitnick_knit@1.4.7"].knit.Services.SkillManagerV2.RE.ExecuteSkill:FireServer(unpack(args))
+                    end)
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+local AutoKillScroid = false
+Tab:AddToggle({
+    Name = "Auto kill scroid",
+    Default = false,
+    Callback = function(Value)
+        AutoKillScroid = Value
+        if Value then
+            task.spawn(function()
+                while AutoKillScroid do
+                    local customMob = workspace:FindFirstChild("World Mobs") and workspace["World Mobs"]:FindFirstChild("Event Mobs") and workspace["World Mobs"]["Event Mobs"]:FindFirstChild("CustomMob")
+                    if customMob and customMob.PrimaryPart then
+                        local mobPos = customMob.PrimaryPart.Position
+                        pcall(function()
+                            ReplicatedStorage.Packages._Index["sleitnick_knit@1.4.7"].knit.Services.SkillManager.RE.LockedOnChanged:FireServer(customMob)
+                            ReplicatedStorage.Remotes.SkillRemote:FireServer({Camera = CFrame.lookAt(mobPos + Vector3.new(0, 15, 0), mobPos), SkillId = "101", Began = true, CFrame = CFrame.lookAt(mobPos + Vector3.new(0, 5, 0), mobPos), ["Typ\208\181"] = 1, Aim = mobPos})
+                        end)
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+local AutoDanh = false
+Tab:AddToggle({
+    Name = "Auto đánh",
+    Default = false,
+    Callback = function(Value)
+        AutoDanh = Value
+        if Value then
+            task.spawn(function()
+                while AutoDanh do
+                    local args = {
+                        {
+                            Camera = CFrame.new(1345.49853515625, 600.545654296875, -2916.877197265625, -0.21036981046199799, -0.36530575156211853, 0.9068055748939514, 0, 0.9275626540184021, 0.37366774678230286, -0.977621853351593, 0.07860841602087021, -0.19513118267059326),
+                            SkillId = "1",
+                            Began = true,
+                            CFrame = CFrame.new(1334.1634521484375, 594.4747924804688, -2914.43798828125, -0.3630794882774353, 6.794644491492363e-08, 0.9317581653594971, -1.2599003618163351e-08, 1, -7.783230415725484e-08, -0.9317581653594971, -3.9998539591579174e-08, -0.3630794882774353),
+                            ["Typ\208\181"] = 1,
+                            Aim = Vector3.new(1287.5755615234375, 594.4747924804688, -2896.283935546875)
+                        }
+                    }
+                    pcall(function()
+                        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SkillRemote"):FireServer(unpack(args))
+                    end)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+local AutoEnergyBallGreta = false
+Tab:AddToggle({
+    Name = "Auto enery ball Greta",
+    Default = false,
+    Callback = function(Value)
+        AutoEnergyBallGreta = Value
+        if Value then
+            task.spawn(function()
+                while AutoEnergyBallGreta do
+                    local args = {
+                        {
+                            Camera = CFrame.new(1134.539794921875, 2026.8126220703125, 878.4974975585938, -0.9346979260444641, -0.11704222112894058, 0.33562028408050537, 0, 0.9442304968833923, 0.32928532361984253, -0.35544317960739136, 0.3077823221683502, -0.8825702667236328),
+                            SkillId = "101",
+                            Began = true,
+                            CFrame = CFrame.new(1125.9349365234375, 2018.352783203125, 903.3755493164062, 0.04905059188604355, -0.003960008732974529, -0.9987884163856506, -0.009050008840858936, 0.9999493360519409, -0.004409058019518852, 0.9987552762031555, 0.009255310520529747, 0.04901226609945297),
+                            ["Typ\208\181"] = 1,
+                            Aim = Vector3.new(1175.8743896484375, 2018.5732421875, 900.9249267578125)
+                        }
+                    }
+                    pcall(function()
+                        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SkillRemote"):FireServer(unpack(args))
+                    end)
+                    task.wait(0.15)
+                end
+            end)
+        end
+    end
+})
+
+local AutoNextArea = false
+Tab:AddToggle({
+    Name = "Auto Next Area",
+    Default = false,
+    Callback = function(Value)
+        AutoNextArea = Value
+        if Value then
+            task.spawn(function()
+                while AutoNextArea do
+                    pcall(function()
+                        workspace:WaitForChild("Dungeon"):WaitForChild("Stages"):WaitForChild("0"):WaitForChild("NextArea"):WaitForChild("DungeonNextAreaPad"):WaitForChild("RE"):WaitForChild("Interact"):FireServer(true)
+                    end)
                     task.wait(0.1)
                 end
             end)
@@ -67,86 +318,35 @@ Tab3:AddToggle({
 })
 
 -- =========================================================
--- TAB 4: ANTI LAG
--- =========================================================
-local LagCleared = false
-local OriginalMaterials = {}
-
-Tab4:AddToggle({
-    Name = "Clear Textures (Reduce Lag)",
-    Default = false,
-    Callback = function(Value)
-        LagCleared = Value
-        if Value then
-            for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
-                    table.insert(OriginalMaterials, {Part = v, Mat = v.Material})
-                    v.Material = Enum.Material.SmoothPlastic
-                end
-                if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") then
-                    v.Enabled = false
-                end
-            end
-        else
-            for _, data in ipairs(OriginalMaterials) do
-                if data.Part then
-                    data.Part.Material = data.Mat
-                end
-            end
-            table.clear(OriginalMaterials)
-        end
-    end
-})
-
--- =========================================================
--- TAB 1: AUTO FARM
+-- ORIGINAL FEATURES (Auto Farm Tab)
 -- =========================================================
 
-Tab1:AddToggle({
-    Name = "Auto set Meta",
-    Default = false,
-    Save = true,
-    Flag = "AutoMeta",
-    Callback = function(Value)
-        AutoMeta = Value
-        if not Value and MetaTween then
-            pcall(function() MetaTween:Cancel() end)
-            MetaTween = nil
-        end
-    end
-})
+local BossFolder = workspace["World Mobs"]["Boss Mobs"]
 
-Tab1:AddToggle({
-    Name = "Auto Pains + Hurts",
-    Default = false,
-    Save = true,
-    Flag = "AutoPainsHurts",
-    Callback = function(Value)
-        AutoPainsHurts = Value
-        if not Value and PainsHurtsTween then
-            pcall(function() PainsHurtsTween:Cancel() end)
-            PainsHurtsTween = nil
-        end
-    end
-})
+local AutoMeta = false
+local AutoPainsHurts = false
+local AutoZero = false
+local AutoPickup = false
+local FloatEnabled = false
+local FloatConnection, BV
 
-Tab1:AddToggle({
-    Name = "Auto set Zero",
-    Default = false,
-    Save = true,
-    Flag = "AutoZero",
-    Callback = function(Value)
-        AutoZero = Value
-        if not Value and ZeroTween then
-            pcall(function() ZeroTween:Cancel() end)
-            ZeroTween = nil
-        end
-    end
-})
+local MetaTween, PainsHurtsTween, ZeroTween = nil, nil, nil
+local TweenSpeed = 200
 
--- =========================================================
--- HÀM TWEEN CHUNG
--- =========================================================
+Tab1:AddToggle({ Name = "Auto set Meta", Default = false, Callback = function(Value)
+    AutoMeta = Value
+    if not Value and MetaTween then pcall(function() MetaTween:Cancel() end) MetaTween = nil end
+end })
+
+Tab1:AddToggle({ Name = "Auto Pains + Hurts", Default = false, Callback = function(Value)
+    AutoPainsHurts = Value
+    if not Value and PainsHurtsTween then pcall(function() PainsHurtsTween:Cancel() end) PainsHurtsTween = nil end
+end })
+
+Tab1:AddToggle({ Name = "Auto set Zero", Default = false, Callback = function(Value)
+    AutoZero = Value
+    if not Value and ZeroTween then pcall(function() ZeroTween:Cancel() end) ZeroTween = nil end
+end })
 
 local function GetRoot()
     local Character = Player.Character
@@ -158,47 +358,23 @@ local function TweenTo(TargetCFrame, CurrentTweenName, IsEnabled)
     local Root = GetRoot()
     local Distance = (Root.Position - TargetCFrame.Position).Magnitude
     local Duration = Distance / TweenSpeed
-
     if Duration < 0.1 then
         if IsEnabled() then Root.CFrame = TargetCFrame end
         return true, nil
     end
-
-    local Tween = TweenService:Create(
-        Root,
-        TweenInfo.new(Duration, Enum.EasingStyle.Linear),
-        {CFrame = TargetCFrame}
-    )
-
+    local Tween = TweenService:Create(Root, TweenInfo.new(Duration, Enum.EasingStyle.Linear), {CFrame = TargetCFrame})
     if CurrentTweenName == "Meta" then MetaTween = Tween
     elseif CurrentTweenName == "PainsHurts" then PainsHurtsTween = Tween
     elseif CurrentTweenName == "Zero" then ZeroTween = Tween end
-
     Tween:Play()
-
     while IsEnabled() and Tween.PlaybackState == Enum.PlaybackState.Playing do
-        if not Root.Parent or Player.Character ~= Root.Parent then
-            pcall(function() Tween:Cancel() end)
-            return false, nil
-        end
+        if not Root.Parent or Player.Character ~= Root.Parent then pcall(function() Tween:Cancel() end) return false, nil end
         task.wait()
     end
-
-    if not IsEnabled() then
-        pcall(function() Tween:Cancel() end)
-        return false, nil
-    end
-
-    if Root.Parent and Player.Character == Root.Parent then
-        Root.CFrame = TargetCFrame
-    end
-
+    if not IsEnabled() then pcall(function() Tween:Cancel() end) return false, nil end
+    if Root.Parent and Player.Character == Root.Parent then Root.CFrame = TargetCFrame end
     return true, nil
 end
-
--- =========================================================
--- AUTO META
--- =========================================================
 
 task.spawn(function()
     local CurrentIndex = 1
@@ -207,19 +383,15 @@ task.spawn(function()
         {Name = "Meta Coolest",  Position = CFrame.new(-1997.33386, 80.0019531, -2640.44287, 1,0,0, 0,1,0, 0,0,1)},
         {Name = "Meta Amythest", Position = CFrame.new(1344.54321, 75.0019531, -2866.45361, 1,0,0, 0,1,0, 0,0,1)}
     }
-
     while true do
         if not AutoMeta then task.wait(0.2) continue end
-
         local Data = BossData[CurrentIndex]
         local Root = GetRoot()
         local Distance = (Root.Position - Data.Position.Position).Magnitude
-
         if Distance > 3 then
             local Success = TweenTo(Data.Position, "Meta", function() return AutoMeta end)
             if not Success then task.wait(0.2) continue end
         end
-
         local Boss = BossFolder:FindFirstChild(Data.Name)
         if Boss then
             local Humanoid = Boss:FindFirstChildOfClass("Humanoid")
@@ -229,18 +401,10 @@ task.spawn(function()
                     CurrentIndex += 1
                     if CurrentIndex > #BossData then CurrentIndex = 1 end
                 end
-            else
-                task.wait(0.2)
-            end
-        else
-            task.wait(0.2)
-        end
+            else task.wait(0.2) end
+        else task.wait(0.2) end
     end
 end)
-
--- =========================================================
--- AUTO PAINS + HURTS
--- =========================================================
 
 task.spawn(function()
     local CurrentIndex = 1
@@ -248,19 +412,15 @@ task.spawn(function()
         {Name = "Pains", Position = CFrame.new(5435.41064, 502.409637, 741.838013, 1,0,0, 0,1,0, 0,0,1)},
         {Name = "Hurts", Position = CFrame.new(2733.07642, 101.598831, 426.639465, 1,0,0, 0,1,0, 0,0,1)}
     }
-
     while true do
         if not AutoPainsHurts then task.wait(0.2) continue end
-
         local Data = BossData[CurrentIndex]
         local Root = GetRoot()
         local Distance = (Root.Position - Data.Position.Position).Magnitude
-
         if Distance > 3 then
             local Success = TweenTo(Data.Position, "PainsHurts", function() return AutoPainsHurts end)
             if not Success then task.wait(0.2) continue end
         end
-
         local Boss = BossFolder:FindFirstChild(Data.Name)
         if Boss then
             local Humanoid = Boss:FindFirstChildOfClass("Humanoid")
@@ -270,79 +430,41 @@ task.spawn(function()
                     CurrentIndex += 1
                     if CurrentIndex > #BossData then CurrentIndex = 1 end
                 end
-            else
-                task.wait(0.2)
-            end
-        else
-            task.wait(0.2)
-        end
+            else task.wait(0.2) end
+        else task.wait(0.2) end
     end
 end)
 
--- =========================================================
--- AUTO ZERO
--- =========================================================
-
 task.spawn(function()
     local TargetPosition = CFrame.new(2204.00586, 45.5981483, -4348.96826, 1,0,0, 0,1,0, 0,0,1)
-
     while true do
         if not AutoZero then task.wait(0.2) continue end
         local Root = GetRoot()
         local Distance = (Root.Position - TargetPosition.Position).Magnitude
-        if Distance > 3 then
-            TweenTo(TargetPosition, "Zero", function() return AutoZero end)
-        end
+        if Distance > 3 then TweenTo(TargetPosition, "Zero", function() return AutoZero end) end
         task.wait(0.5)
     end
 end)
 
--- =========================================================
--- AUTO PICKUP
--- =========================================================
-local AutoPickup = false
-
-Tab1:AddToggle({
-    Name = "Auto pickup Support Farm full set",
-    Default = false,
-    Save = true,
-    Callback = function(Value)
-        AutoPickup = Value
-        if Value then
-            task.spawn(function()
-                while AutoPickup do
-                    local Player = game.Players.LocalPlayer
-                    local Character = Player.Character
-                    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-                    if Root then
-                        for _, v in ipairs(workspace:GetDescendants()) do
-                            if not AutoPickup then break end
-                            if v:IsA("ProximityPrompt") then
-                                local Part = v.Parent
-                                if Part and Part:IsA("BasePart") then
-                                    if (Root.Position - Part.Position).Magnitude <= 100 then
-                                        fireproximityprompt(v)
-                                    end
-                                end
-                            end
+Tab1:AddToggle({ Name = "Auto pickup Support Farm full set", Default = false, Callback = function(Value)
+    AutoPickup = Value
+    if Value then
+        task.spawn(function()
+            while AutoPickup do
+                local Root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                if Root then
+                    for _, v in ipairs(workspace:GetDescendants()) do
+                        if not AutoPickup then break end
+                        if v:IsA("ProximityPrompt") then
+                            local Part = v.Parent
+                            if Part and Part:IsA("BasePart") and (Root.Position - Part.Position).Magnitude <= 100 then fireproximityprompt(v) end
                         end
                     end
-                    task.wait(0.1)
                 end
-            end)
-        end
+                task.wait(0.1)
+        end)
     end
-})
-
-OrionLib:Init()
-
--- =========================================================
--- ANTI FALL
--- =========================================================
-local RunService = game:GetService("RunService")
-local FloatEnabled = false
-local FloatConnection
-local BV
+end })
 
 local function removeFloat()
     if FloatConnection then FloatConnection:Disconnect() FloatConnection = nil end
@@ -359,26 +481,17 @@ local function setupFloat(Character)
     BV.Velocity = Vector3.zero
     BV.Parent = Root
     FloatConnection = RunService.Heartbeat:Connect(function()
-        if FloatEnabled and BV and BV.Parent and Root.Parent then
-            BV.Velocity = Vector3.zero
-        end
+        if FloatEnabled and BV and BV.Parent and Root.Parent then BV.Velocity = Vector3.zero end
     end)
 end
 
-Tab1:AddToggle({
-    Name = "Anti Fall Support Tween",
-    Default = false,
-    Save = true,
-    Callback = function(Value)
-        FloatEnabled = Value
-        if Value then
-            local Character = Player.Character
-            if Character then setupFloat(Character) end
-        else
-            removeFloat()
-        end
-    end
-})
+Tab1:AddToggle({ Name = "Anti Fall Support Tween", Default = false, Callback = function(Value)
+    FloatEnabled = Value
+    if Value then
+        local Character = Player.Character
+        if Character then setupFloat(Character) end
+    else removeFloat() end
+end })
 
 Player.CharacterAdded:Connect(function(Character)
     task.wait(0.5)
@@ -386,356 +499,3 @@ Player.CharacterAdded:Connect(function(Character)
 end)
 
 OrionLib:Init()
-
--- =========================================================
--- TIME STOP BUTTON
--- =========================================================
-local RS = game:GetService("ReplicatedStorage")
-local LP = Players.LocalPlayer
-
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "Skill126Gui"
-Gui.ResetOnSpawn = false
-Gui.Enabled = false
-Gui.Parent = LP:WaitForChild("PlayerGui")
-
-local SkillButton = Instance.new("TextButton")
-SkillButton.Name = "Skill126Button"
-SkillButton.Size = UDim2.new(0, 150, 0, 50)
-SkillButton.Position = UDim2.new(0.5, -75, 0.8, 0)
-SkillButton.BackgroundTransparency = 0.1
-SkillButton.Text = "Time stop"
-SkillButton.TextSize = 18
-SkillButton.TextColor3 = Color3.new(1, 1, 1)
-SkillButton.Parent = Gui
-
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 8)
-Corner.Parent = SkillButton
-
-SkillButton.MouseButton1Click:Connect(function()
-    local args = {
-        {
-            Camera = CFrame.new(
-                74.2727279663086, 251.0009002685547, -28.747745513916016,
-                -0.9511321783065796, -0.044049736112356186, 0.3056260347366333,
-                0, 0.9897724390029907, 0.14265543222427368,
-                -0.308784157037735, 0.13568417727947235, -0.9414043426513672
-            ),
-            SkillId = "126",
-            Began = true,
-            CFrame = CFrame.new(70.45240020751953, 247.81771850585938, -16.98019027709961, 1,0,0, 0,1,0, 0,0,1),
-            ["Typ\208\181"] = 1,
-            Aim = vector.create(70.45240020751953, 247.81771850585938, -66.98019409179688)
-        }
-    }
-    RS:WaitForChild("Remotes"):WaitForChild("SkillRemote"):FireServer(unpack(args))
-end)
-
-Tab1:AddToggle({
-    Name = "Time stop wis",
-    Default = false,
-    Callback = function(Value) Gui.Enabled = Value end
-})
-
-OrionLib:Init()
-
--- =========================================================
--- AUTO M1
--- =========================================================
-local AutoSkill = false
-
-Tab:AddToggle({
-    Name = "Auto M1",
-    Default = false,
-    Save = true,
-    Callback = function(Value)
-        AutoSkill = Value
-        if Value then
-            task.spawn(function()
-                while AutoSkill do
-                    local args = {
-                        [1] = {
-                            ["Camera"] = CFrame.new(
-                                1436.56982421875, 610.5719604492188, -2926.40576171875,
-                                0.4276675879955292, 0.8082790374755859, -0.404704213142395,
-                                0, 0.44771331548690796, 0.8941771984100342,
-                                0.9039360880851746, -0.38241061568260193, 0.19147247076034546
-                            ),
-                            ["SkillId"] = "1",
-                            ["Began"] = true,
-                            ["CFrame"] = CFrame.new(
-                                1441.628662109375, 597.61474609375, -2928.799072265625,
-                                0.4534393846988678, -9.274389611846345e-08, -0.891287088394165,
-                                2.6512436690495633e-08, 1, -9.056802241502737e-08,
-                                0.891287088394165, 1.7436915911162032e-08, 0.4534393846988678
-                            ),
-                            ["Typ\208\181"] = 1,
-                            ["Aim"] = Vector3.new(1486.1929931640625, 597.61474609375, -2951.470947265625)
-                        }
-                    }
-                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SkillRemote"):FireServer(unpack(args))
-                    task.wait(0.151)
-                end
-            end)
-        end
-    end
-})
-
-OrionLib:Init()
-
--- =========================================================
--- AURA KILL ENERGY BLAST V2
--- =========================================================
-local WorldMobs = workspace:WaitForChild("World Mobs")
-local SkillRemote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SkillRemote")
-
-local AuraEnabled = false
-
-local function GetRandomMob()
-    local Character = Player.Character
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    if not Root then return nil end
-
-    local Mobs = {}
-    for _, Mob in ipairs(WorldMobs:GetDescendants()) do
-        if Mob:IsA("Model") then
-            local Humanoid = Mob:FindFirstChildOfClass("Humanoid")
-            local MobRoot = Mob:FindFirstChild("HumanoidRootPart")
-                or Mob.PrimaryPart
-                or Mob:FindFirstChildWhichIsA("BasePart")
-            if Humanoid and MobRoot and Humanoid.Health > 0 then
-                local Distance = (Root.Position - MobRoot.Position).Magnitude
-                if Distance <= 400 then
-                    table.insert(Mobs, Mob)
-                end
-            end
-        end
-    end
-    if #Mobs > 0 then return Mobs[math.random(1, #Mobs)] end
-    return nil
-end
-
-Tab:AddToggle({
-    Name = "Aura Kill Energy Blast V2",
-    Default = false,
-    Callback = function(Value)
-        AuraEnabled = Value
-        if AuraEnabled then
-            task.spawn(function()
-                while AuraEnabled do
-                    task.wait(0.16)
-                    local Character = Player.Character
-                    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-                    if Root then
-                        local RandomMob = GetRandomMob()
-                        if RandomMob then
-                            local MobRoot = RandomMob:FindFirstChild("HumanoidRootPart")
-                                or RandomMob.PrimaryPart
-                                or RandomMob:FindFirstChildWhichIsA("BasePart")
-                            if MobRoot then
-                                local TargetPosition = MobRoot.Position
-                                local SkillCFrame = CFrame.lookAt(
-                                    Root.Position,
-                                    Vector3.new(TargetPosition.X, Root.Position.Y, TargetPosition.Z)
-                                )
-                                local args = {
-                                    [1] = {
-                                        ["Camera"] = CFrame.lookAt(workspace.CurrentCamera.CFrame.Position, TargetPosition),
-                                        ["SkillId"] = "101",
-                                        ["Began"] = true,
-                                        ["CFrame"] = SkillCFrame,
-                                        ["Typ\208\181"] = 1,
-                                        ["Aim"] = TargetPosition
-                                    }
-                                }
-                                SkillRemote:FireServer(unpack(args))
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end
-})
-
--- =========================================================
--- AUTO LOCK RANDOM MOB
--- =========================================================
-local LockedOnChanged = game:GetService("ReplicatedStorage")
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_knit@1.4.7")
-    :WaitForChild("knit")
-    :WaitForChild("Services")
-    :WaitForChild("SkillManager")
-    :WaitForChild("RE")
-    :WaitForChild("LockedOnChanged")
-
-local AutoLockRandomMob = false
-
-local function GetRandomMobLock()
-    local Character = Player.Character
-    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
-    if not Root then return nil end
-
-    local ValidMobs = {}
-    for _, Mob in ipairs(WorldMobs:GetDescendants()) do
-        if Mob:IsA("Model") then
-            local Humanoid = Mob:FindFirstChildOfClass("Humanoid")
-            local MobRoot = Mob:FindFirstChild("HumanoidRootPart")
-                or Mob.PrimaryPart
-                or Mob:FindFirstChildWhichIsA("BasePart")
-            if Humanoid and MobRoot and Humanoid.Health > 0 then
-                local Distance = (Root.Position - MobRoot.Position).Magnitude
-                if Distance <= 400 then
-                    table.insert(ValidMobs, Mob)
-                end
-            end
-        end
-    end
-    if #ValidMobs > 0 then return ValidMobs[math.random(1, #ValidMobs)] end
-    return nil
-end
-
-Tab:AddToggle({
-    Name = "Auto Lock Random Mob",
-    Default = false,
-    Callback = function(Value)
-        AutoLockRandomMob = Value
-        if Value then
-            task.spawn(function()
-                while AutoLockRandomMob do
-                    local RandomMob = GetRandomMobLock()
-                    if RandomMob then
-                        LockedOnChanged:FireServer(RandomMob)
-                    end
-                    task.wait(0.4)
-                end
-            end)
-        end
-    end
-})
-
--- =========================================================
--- AUTO KILL ZAJA
--- =========================================================
-local EventMobs = WorldMobs:WaitForChild("Event Mobs")
-
-local AutoZaja = false
-local CurrentTween = nil
-
-local function GetZaja()
-    local Zaja = EventMobs:FindFirstChild("Zaja")
-    if not Zaja then return nil end
-    local Humanoid = Zaja:FindFirstChildOfClass("Humanoid")
-    local Root = Zaja:FindFirstChild("HumanoidRootPart")
-        or Zaja.PrimaryPart
-        or Zaja:FindFirstChildWhichIsA("BasePart")
-    if not Humanoid or not Root or Humanoid.Health <= 0 then return nil end
-    return Zaja, Humanoid, Root
-end
-
-local function GetDistancePosition(PlayerRoot, ZajaRoot)
-    local Direction = PlayerRoot.Position - ZajaRoot.Position
-    if Direction.Magnitude <= 0.1 then
-        Direction = Vector3.new(0, 0, 1)
-    else
-        Direction = Direction.Unit
-    end
-    local Position = ZajaRoot.Position + (Direction * 500)
-    return CFrame.lookAt(
-        Position,
-        Vector3.new(ZajaRoot.Position.X, Position.Y, ZajaRoot.Position.Z)
-    )
-end
-
-local function TweenToZaja(PlayerRoot, ZajaRoot)
-    if CurrentTween then
-        CurrentTween:Cancel()
-        CurrentTween = nil
-    end
-    local TargetCFrame = GetDistancePosition(PlayerRoot, ZajaRoot)
-    local Distance = (PlayerRoot.Position - TargetCFrame.Position).Magnitude
-    local Time = Distance / 220
-    CurrentTween = TweenService:Create(
-        PlayerRoot,
-        TweenInfo.new(math.max(Time, 0.05), Enum.EasingStyle.Linear),
-        {CFrame = TargetCFrame}
-    )
-    CurrentTween:Play()
-end
-
-Tab1:AddToggle({
-    Name = "Auto kill Zaja",
-    Default = false,
-    Callback = function(Value)
-        AutoZaja = Value
-        if not Value then
-            if CurrentTween then
-                CurrentTween:Cancel()
-                CurrentTween = nil
-            end
-            return
-        end
-
-        -- Luồng di chuyển
-        task.spawn(function()
-            while AutoZaja do
-                local Character = Player.Character
-                local PlayerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-                local Zaja, Humanoid, ZajaRoot = GetZaja()
-                if PlayerRoot and Zaja and Humanoid.Health > 0 then
-                    local Distance = (PlayerRoot.Position - ZajaRoot.Position).Magnitude
-                    if math.abs(Distance - 500) > 25 then
-                        TweenToZaja(PlayerRoot, ZajaRoot)
-                    end
-                else
-                    if CurrentTween then
-                        CurrentTween:Cancel()
-                        CurrentTween = nil
-                    end
-                end
-                task.wait(0.3)
-            end
-        end)
-
-        -- Luồng LockOn
-        task.spawn(function()
-            while AutoZaja do
-                local Zaja = GetZaja()
-                if Zaja then
-                    LockedOnChanged:FireServer(Zaja)
-                end
-                task.wait(0.2)
-            end
-        end)
-
-        -- Luồng bắn Skill 101
-        task.spawn(function()
-            while AutoZaja do
-                local Character = Player.Character
-                local PlayerRoot = Character and Character:FindFirstChild("HumanoidRootPart")
-                local Zaja, Humanoid, ZajaRoot = GetZaja()
-                if PlayerRoot and Zaja and ZajaRoot then
-                    local TargetPosition = ZajaRoot.Position
-                    local args = {
-                        [1] = {
-                            ["Camera"] = CFrame.lookAt(workspace.CurrentCamera.CFrame.Position, TargetPosition),
-                            ["SkillId"] = "101",
-                            ["Began"] = true,
-                            ["CFrame"] = CFrame.lookAt(
-                                PlayerRoot.Position,
-                                Vector3.new(TargetPosition.X, PlayerRoot.Position.Y, TargetPosition.Z)
-                            ),
-                            ["Typ\208\181"] = 1,
-                            ["Aim"] = TargetPosition
-                        }
-                    }
-                    SkillRemote:FireServer(unpack(args))
-                end
-                task.wait(0.18)
-            end
-        end)
-    end
-})
