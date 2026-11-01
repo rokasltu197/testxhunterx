@@ -1895,6 +1895,7 @@ Tab1:AddToggle({
                             ["Typ\208\181"] = 1,
                             ["Aim"] = TargetPosition
                         }
+                        }
                     }
                     SkillRemote:FireServer(unpack(args))
                 end
