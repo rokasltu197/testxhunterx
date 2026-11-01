@@ -215,7 +215,6 @@ Tab:AddToggle({
         end
     end
 })
-
 local AutoKillScroid = false
 Tab:AddToggle({
     Name = "Auto kill scroid",
@@ -434,7 +433,6 @@ task.spawn(function()
         else task.wait(0.2) end
     end
 end)
-
 task.spawn(function()
     local TargetPosition = CFrame.new(2204.00586, 45.5981483, -4348.96826, 1,0,0, 0,1,0, 0,0,1)
     while true do
@@ -457,7 +455,9 @@ Tab1:AddToggle({ Name = "Auto pickup Support Farm full set", Default = false, Ca
                         if not AutoPickup then break end
                         if v:IsA("ProximityPrompt") then
                             local Part = v.Parent
-                            if Part and Part:IsA("BasePart") and (Root.Position - Part.Position).Magnitude <= 100 then fireproximityprompt(v) end
+                            if Part and Part:IsA("BasePart") and (Root.Position - Part.Position).Magnitude <= 100 then 
+                                fireproximityprompt(v) 
+                            end
                         end
                     end
                 end
