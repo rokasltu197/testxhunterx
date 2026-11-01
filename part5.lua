@@ -29,7 +29,77 @@ local ZeroTween = nil
 local TweenSpeed = 200
 
 -- =========================================================
--- NÚT ORION LIB
+-- TAB 2: DUNGEON
+-- =========================================================
+Tab2:AddButton({
+    Name = "Teleport to Spawn",
+    Callback = function()
+        local Character = Player.Character
+        local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+        if Root then
+            Root.CFrame = CFrame.new(0, 50, 0) -- Adjust these coordinates to your spawn
+            OrionLib:MakeNotification({Name = "Teleported", Content = "Teleported to Spawn", Time = 3})
+        end
+    end
+})
+
+-- =========================================================
+-- TAB 3: AUTO SKILL
+-- =========================================================
+local FastAttackEnabled = false
+
+Tab3:AddToggle({
+    Name = "Fast Attack (Spam M1)",
+    Default = false,
+    Callback = function(Value)
+        FastAttackEnabled = Value
+        if Value then
+            task.spawn(function()
+                while FastAttackEnabled do
+                    local VIM = game:GetService("VirtualInputManager")
+                    VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                    VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+-- =========================================================
+-- TAB 4: ANTI LAG
+-- =========================================================
+local LagCleared = false
+local OriginalMaterials = {}
+
+Tab4:AddToggle({
+    Name = "Clear Textures (Reduce Lag)",
+    Default = false,
+    Callback = function(Value)
+        LagCleared = Value
+        if Value then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") and v.Material ~= Enum.Material.SmoothPlastic then
+                    table.insert(OriginalMaterials, {Part = v, Mat = v.Material})
+                    v.Material = Enum.Material.SmoothPlastic
+                end
+                if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Fire") then
+                    v.Enabled = false
+                end
+            end
+        else
+            for _, data in ipairs(OriginalMaterials) do
+                if data.Part then
+                    data.Part.Material = data.Mat
+                end
+            end
+            table.clear(OriginalMaterials)
+        end
+    end
+})
+
+-- =========================================================
+-- TAB 1: AUTO FARM
 -- =========================================================
 
 Tab1:AddToggle({
